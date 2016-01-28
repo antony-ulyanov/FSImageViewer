@@ -25,7 +25,7 @@
 #import <EGOCache/EGOCache.h>
 #import <CommonCrypto/CommonDigest.h>
 #import "FSImageLoader.h"
-#import "AFHTTPRequestOperation.h"
+#import "AFHTTPSessionManager.h"
 
 @implementation FSImageLoader {
     NSMutableArray *runningRequests;
@@ -55,18 +55,18 @@
 }
 
 - (void)cancelAllRequests {
-    for (AFHTTPRequestOperation *imageRequestOperation in runningRequests) {
-        [imageRequestOperation cancel];
-    }
+//    for (AFHTTPRequestOperation *imageRequestOperation in runningRequests) {
+//        [imageRequestOperation cancel];
+//    }
 }
 
 - (void)cancelRequestForUrl:(NSURL *)aURL {
-    for (AFHTTPRequestOperation *imageRequestOperation in runningRequests) {
-        if ([imageRequestOperation.request.URL isEqual:aURL]) {
-            [imageRequestOperation cancel];
-            break;
-        }
-    }
+//    for (AFHTTPRequestOperation *imageRequestOperation in runningRequests) {
+//        if ([imageRequestOperation.request.URL isEqual:aURL]) {
+//            [imageRequestOperation cancel];
+//            break;
+//        }
+//    }
 }
 
 - (void)loadImageForURL:(NSURL *)aURL progress:(void (^)(float progress))progress image:(void (^)(UIImage *image, NSError *error))imageBlock {
@@ -104,33 +104,53 @@
     else {
         [self cancelRequestForUrl:aURL];
 
-        NSURLRequest *urlRequest = [[NSURLRequest alloc] initWithURL:aURL cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:_timeoutInterval];
-        AFHTTPRequestOperation *imageRequestOperation = [[AFHTTPRequestOperation alloc] initWithRequest:urlRequest];
-        imageRequestOperation.responseSerializer = [AFImageResponseSerializer serializer];
-        [runningRequests addObject:imageRequestOperation];
-        __weak AFHTTPRequestOperation *imageRequestOperationForBlock = imageRequestOperation;
+//        NSURLRequest *urlRequest = [[NSURLRequest alloc] initWithURL:aURL cachePolicy:NSURLRequestReturnCacheDataElseLoad timeoutInterval:_timeoutInterval];
+//        AFHTTPRequestOperation *imageRequestOperation = [[AFHTTPRequestOperation alloc] initWithRequest:urlRequest];
+//        imageRequestOperation.responseSerializer = [AFImageResponseSerializer serializer];
+//        [runningRequests addObject:imageRequestOperation];
+//        __weak AFHTTPRequestOperation *imageRequestOperationForBlock = imageRequestOperation;
 
-        [imageRequestOperation setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
-            UIImage *image = responseObject;
-            [[EGOCache globalCache] setImage:image forKey:cacheKey];
-            if (imageBlock) {
-                imageBlock(image, nil);
-            }
-            [runningRequests removeObject:imageRequestOperationForBlock];
-        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-            if (imageBlock) {
-                imageBlock(nil, error);
-            }
-            [runningRequests removeObject:imageRequestOperationForBlock];
-        }];
+        AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
+        manager.responseSerializer = [AFImageResponseSerializer serializer];
+
+        [manager GET:aURL.absoluteString parameters:nil progress:nil
+             success:^(NSURLSessionTask *task, id responseObject) {
+                 UIImage *image = responseObject;
+                 [[EGOCache globalCache] setImage:image forKey:cacheKey];
+                 if (imageBlock) {
+                     imageBlock(image, nil);
+                 }
+//                 [runningRequests removeObject:imageRequestOperationForBlock];
+        } failure:^(NSURLSessionTask *operation, NSError *error) {
+                    if (imageBlock) {
+                        imageBlock(nil, error);
+                    }
+//                    [runningRequests removeObject:imageRequestOperationForBlock];
+                }];
+        manager.
+
+        // ------
+//        [imageRequestOperation setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
+//            UIImage *image = responseObject;
+//            [[EGOCache globalCache] setImage:image forKey:cacheKey];
+//            if (imageBlock) {
+//                imageBlock(image, nil);
+//            }
+//            [runningRequests removeObject:imageRequestOperationForBlock];
+//        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+//            if (imageBlock) {
+//                imageBlock(nil, error);
+//            }
+//            [runningRequests removeObject:imageRequestOperationForBlock];
+//        }];
         
-        [imageRequestOperation setDownloadProgressBlock:^(NSUInteger bytesRead, long long totalBytesRead, long long totalBytesExpectedToRead) {
-            if (progress) {
-                progress((float)totalBytesRead / totalBytesExpectedToRead);
-            }
-        }];
+//        [imageRequestOperation setDownloadProgressBlock:^(NSUInteger bytesRead, long long totalBytesRead, long long totalBytesExpectedToRead) {
+//            if (progress) {
+//                progress((float)totalBytesRead / totalBytesExpectedToRead);
+//            }
+//        }];
         
-        [imageRequestOperation start];
+//        [imageRequestOperation start];
     }
 }
 
