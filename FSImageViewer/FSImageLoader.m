@@ -127,7 +127,6 @@
                     }
 //                    [runningRequests removeObject:imageRequestOperationForBlock];
                 }];
-        manager.
 
         // ------
 //        [imageRequestOperation setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
